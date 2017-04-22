@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html >
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-2.5.0.js"></script>
+
+<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+<style>
+    .posts {
+		margin: 0 0 2em 0;
+		list-style-type: none;
+		padding: 0;
+		width: 56em;
+    }
+	.posts li {
+		position: relative;
+		left: 0;
+		background-color: #EEE;
+		margin: .5em;
+		padding: .3em 0;
+		height: 23em;
+		border-radius: 4px;
+	}
+	.posts .text {
+		position: relative;
+		top: -3px;
+	}
+</style>
+<body>
+
+<div ng-app='plunker' ng-controller="ModalDemoCtrl">
+  <script type="text/ng-template" id="myModalContent.html">
+    <div class="modal-header">
+      <h3>Create a new post</h3>
+    </div>
+    <form name="modalForm">
+    <div class="modal-body">
+      <div class="form-group" ng-class="{ 'has-error': modalForm.modalInput.$invalid }" >
+        <input name="modalInput" type="text" class="form-control" size="10" ng-model="data.title" placeholder="Post Title" required/><br>
+		<textarea name="modalInput" class="form-control" rows="10" maxlength="1000" form="modalForm" ng-model="data.pBody" placeholder="Post Body" required></textarea><br>
+		<label for="sel1">Select category:</label>
+			<select name="modalInput" class="form-control" ng-model="data.category" id="sel1" required>
+				<option value="" selected disabled>Please select</option>
+				<option value='lifestyle'>lifestyle</option>
+				<option value='travel'>travel</option>
+				<option value='video'>video</option>
+			</select><br>
+		<input name="modalInput" type="url" class="form-control" size="10" ng-model="data.url" placeholder="http://www.postUrlHere.com"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" ng-disabled="modalForm.$invalid" ng-class="{ 'disabled': modalForm.$invalid }" ng-click="ok()">Submit</button>
+      <button class="btn btn-primary" ng-click="cancel()">Cancel</button>
+    </div>
+  </form>
+  </script>
+  <h1>GWAT Websites and Designs</h1>
+  <button class="btn" ng-click="open()">Submit new post</button>
+</div>
+<script>
+var myMod = angular.module('plunker', ['ui.bootstrap']);
+var ModalDemoCtrl = function($scope, $uibModal, $log) {
+  $scope.data;
+
+  $scope.open = function() {
+  var modalInstance = $uibModal.open({
+    templateUrl: 'myModalContent.html',
+    controller: ModalInstanceCtrl,
+    resolve: {
+      data: function() {
+        return $scope.data;
+      }
+    }
+});
+
+    modalInstance.result.then(function(selectedItem) {
+      $scope.selected = selectedItem;
+    }, function() {
+      $log.info('Modal dismissed at: ' + new Date());
+    });
+  };
+};
+
+var ModalInstanceCtrl = function($scope, $uibModalInstance, $http, data) { 
+	$scope.data = data;
+	
+	$scope.ok = function() {
+		$http.post("http://127.0.0.1:8081/process_post", { data: $scope.data })
+		.then(function (response) {$scope.data = response.data;});
+		$uibModalInstance.close();
+	};
+
+	$scope.cancel = function() {
+		$uibModalInstance.dismiss('cancel');
+	};
+};
+
+myMod.controller('ModalDemoCtrl', ModalDemoCtrl);
+myMod.controller('ModalInstanceCtrl', ModalInstanceCtrl);
+</script>
+
+<div ng-app="myApp" ng-controller="postsCtrl" id="allPosts">
+	<ul class="posts">
+		<li ng-repeat="post in names | orderBy: '-id'" ng-init="myUrl=setUrl(post.url)">
+			{{post.title}}<br>
+			{{post.pBody}}<br>
+			{{post.category}}<br>
+			<iframe ng-if="post.url" ng-src="{{myUrl}}" height=250 width=750></iframe><br><br>
+		</li>
+	</ul>
+</div>
+
+<script>
+var app = angular.module('myApp', []);
+app.controller('postsCtrl', function($scope, $http, $sce) {
+	$scope.setUrl = function(postUrl){
+		return $scope.myUrl = $sce.trustAsResourceUrl(postUrl);
+	};
+	$http.get("http://127.0.0.1:8081/process_get")
+	.then(function (response) {$scope.names = response.data;});
+});
+angular.bootstrap(document.getElementById("allPosts"), ['myApp']);
+</script>
